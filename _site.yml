@@ -1,0 +1,9 @@
+name: "RIVM-Workflows"
+output_dir: "docs"
+navbar:
+  title: "RIVM-Workflows"
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Case Study"
+      href: 01_RIVM-ToolBoxCaseStudy.html

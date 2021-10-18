@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Sudarshan A. Shetty" />
+
+
+<title>Common microbiota analysis workflow using RIVM-Toolbox</title>
+
+<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">RIVM-Workflows</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="01_RIVM-ToolBoxCaseStudy.html">Case Study</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Common microbiota analysis workflow using RIVM-Toolbox</h1>
+<h3 class="subtitle">Comparison of gut microbiota in older adults with and without ILI</h3>
+<h4 class="author">Sudarshan A. Shetty</h4>
+<h4 class="date">Mon Oct 18 12:07:18 2021</h4>
+
+</div>
+
+
+<p>In this workflow, we demonstrate the use of RIVM-toolbox for common microbiome data analytics. We use the data from Fuentes S, et al. (2021) Associations of faecal microbiota with influenza-like illness in participants aged 60 years or older: an observational study. <a href="https://doi.org/10.1016/S2666-7568(20)30034-9">The Lancet Healthy Longevity</a>, 2(1):e13-23.</p>
+<div id="setup" class="section level1">
+<h1>Setup</h1>
+<p>Initiate the analysis by loading the RIVM-Toolbox ( <em>biomeUtils</em>, <em>biomeViz</em> and <em>biomeStats</em>) and other handy external R packages.</p>
+<div id="packages" class="section level2">
+<h2>Packages</h2>
+<pre class="r"><code># RIVM toolbox
+library(biomeUtils)
+library(biomeViz)
+library(biomeStats)
+# External
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+library(microbiome)
+library(ggsignif)</code></pre>
+</div>
+<div id="theme" class="section level2">
+<h2>Theme</h2>
+<p>Theme for data visualization.</p>
+<pre class="r"><code>## change global theme settings (for all following plots)
+theme_set(theme_biomViz(base_size = 12))</code></pre>
+</div>
+<div id="data" class="section level2">
+<h2>Data</h2>
+<p>Load the example data.</p>
+<pre class="r"><code>ps &lt;- FuentesIliGutData</code></pre>
+<pre class="r"><code># Check main comparison variable.
+ps %&gt;% getSampleTibble() %&gt;% 
+  dplyr::count(ILI)</code></pre>
+<pre><code>## # A tibble: 3 x 2
+##   ILI       n
+##   &lt;fct&gt; &lt;int&gt;
+## 1 C       184
+## 2 L1      213
+## 3 L2      192</code></pre>
+<p>There are 184 controls, 213 ILI samples from visit-1 and 192 ILI samples after recovery visit-2.</p>
+</div>
+</div>
+<div id="qc" class="section level1">
+<h1>QC</h1>
+<p>Before starting detailed analysis, it is important to check and explore the data.<br />
+Here, we explore basic sample and ASVs features.</p>
+<pre class="r"><code>qc_Data &lt;- calculateQC(ps)
+qc_Data</code></pre>
+<pre><code>## $SampleQC
+## # A tibble: 589 x 4
+##    Samples   sample_total_taxa sample_total_reads number_taxa_account_fifty_per~
+##    &lt;chr&gt;                 &lt;dbl&gt;              &lt;dbl&gt;                          &lt;int&gt;
+##  1 sample_1                259              15237                             11
+##  2 sample_2                291              18970                             16
+##  3 sample_3                336              21161                             16
+##  4 sample_4                355              17754                             20
+##  5 sample_5                300              25724                             11
+##  6 sample_6                374              33815                             14
+##  7 sample_7                251              13810                             15
+##  8 sample_8                273              22730                             15
+##  9 sample_9                279              22706                             15
+## 10 sample_10               219              15521                              9
+## # ... with 579 more rows
+## 
+## $TaxaQC
+## # A tibble: 905 x 9
+##    taxa    taxa_counts taxa_mean_counts taxa_stdev_counts taxa_cv taxa_rank
+##    &lt;chr&gt;         &lt;dbl&gt;            &lt;dbl&gt;             &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;
+##  1 ASV302        13913           23.6               47.3     2.00     648  
+##  2 ASV636         4063            6.90              27.4     3.97     462  
+##  3 ASV500         6223           10.6               45.0     4.26     535  
+##  4 ASV7         784128         1331.              1652.      1.24     899  
+##  5 ASV2617         311            0.528              1.50    2.84      45  
+##  6 ASV148        40396           68.6              224.      3.26     765  
+##  7 ASV196        24796           42.1              137.      3.26     724  
+##  8 ASV2699         294            0.499              1.81    3.63      40.5
+##  9 ASV109        60088          102.               303.      2.97     798  
+## 10 ASV1472         907            1.54               3.62    2.35     229  
+## # ... with 895 more rows, and 3 more variables: taxa_dectected_samples &lt;dbl&gt;,
+## #   taxa_prevalence &lt;dbl&gt;, percent_of_total &lt;dbl&gt;</code></pre>
+<div id="samples" class="section level2">
+<h2>Samples</h2>
+<p>We would like to check if there is some association between sequencing depth with number of ASVs we detect.</p>
+<pre class="r"><code>sample_qc &lt;- qc_Data$SampleQC
+
+sample_qc %&gt;% 
+  ggplot(aes(sample_total_taxa, sample_total_reads)) +
+  geom_point(alpha=0.25) +
+  labs(x=&quot;No. of ASVs&quot;, y = &quot;No. of reads&quot;,
+       subtitle = &quot;No. of ASVs vs No. of reads&quot;)</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-5-1.png" width="576" /></p>
+</div>
+<div id="taxa" class="section level2">
+<h2>Taxa</h2>
+<p>Next we check some features of ASVs.</p>
+<pre class="r"><code>taxa_qc &lt;- qc_Data$TaxaQC
+
+p1 &lt;- taxa_qc %&gt;% 
+  ggplot(aes(taxa_prevalence , taxa_mean_counts)) +
+  geom_point(alpha=0.25) +
+  labs(x = &quot;Prevalence of ASVs&quot;, y = &quot;Mean counts of ASVs&quot;,
+       subtitle = &quot;Prevalence vs Mean Counts&quot;)
+
+p2 &lt;- taxa_qc %&gt;% 
+  ggplot(aes(taxa_cv , taxa_mean_counts)) +
+  geom_point(alpha=0.25) +
+  labs(x = &quot;C.V ASVs&quot;, y = &quot;Mean counts of ASVs&quot;,
+       subtitle = &quot;Coeficient of Variation vs Mean Counts&quot;)
+
+p3 &lt;- taxa_qc %&gt;% 
+  ggplot(aes(taxa_cv , taxa_prevalence)) +
+  geom_point(alpha=0.25) +
+  labs(x = &quot;C.V ASVs&quot;, y = &quot;Prevalence&quot;,
+       subtitle = &quot;Coeficient of Variation vs Prevalence&quot;)
+
+p1 | p2 | p3 </code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-6-1.png" width="960" /></p>
+<p>These plots indicate a common feature of microbiome sequencing studies. ASVs with lower prevalence and abundances tend to have high variation (noisy ASVs). Several of the downstream analysis can be affected by these ASVs.</p>
+</div>
+<div id="taxonomy" class="section level2">
+<h2>Taxonomy</h2>
+<p>Check if the more abundance-prevalent ASVs have better taxonomic assignments.</p>
+<pre class="r"><code>p1 &lt;- trendAbundanceAssignment(ps,
+                              quantiles = seq(0, 95, by = 5),
+                              plot=TRUE)
+p1 + ggplot2::scale_colour_brewer(&quot;&quot;, palette = &quot;Set2&quot;) +
+    ggplot2::theme(axis.text.x = element_text(angle=90, vjust=0.5)) +
+  labs(subtitle = &quot;Trend in abundance and taxonomic assignment&quot;)</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-7-1.png" width="672" /> Check taxonomic assignments of ASVs.</p>
+<pre class="r"><code>summarizeTaxonomicAssignments(ps)</code></pre>
+<pre><code>## In Species column- 0 are ambigous assignments</code></pre>
+<pre><code>## # A tibble: 7 x 4
+##   Ranks   TaxonomyAssigned Total PrecentAssigned
+##   &lt;chr&gt;              &lt;int&gt; &lt;int&gt;           &lt;dbl&gt;
+## 1 Domain               905   905           100  
+## 2 Phylum               905   905           100  
+## 3 Class                894   905            98.8
+## 4 Order                890   905            98.3
+## 5 Family               814   905            89.9
+## 6 Genus                606   905            67  
+## 7 Species               19   905             2.1</code></pre>
+<p>Now check the taxonomic assignments of ASVs.<br />
+Useful to check this before aggregating at any level.</p>
+<pre class="r"><code>polydf &lt;- checkPolyphyletic(ps)
+polydf</code></pre>
+<pre><code>## # A tibble: 6 x 7
+## # Groups:   Genus [3]
+##   Domain   Phylum     Class      Order         Family          Genus   nfeatures
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;chr&gt;      &lt;chr&gt;         &lt;chr&gt;           &lt;chr&gt;       &lt;int&gt;
+## 1 Bacteria Firmicutes Clostridia Clostridiales Lachnospiraceae Eubact~         2
+## 2 Bacteria Firmicutes Clostridia Clostridiales Lachnospiraceae Clostr~         2
+## 3 Bacteria Firmicutes Clostridia Clostridiales Lachnospiraceae Rumino~         2
+## 4 Bacteria Firmicutes Clostridia Clostridiales Ruminococcaceae Rumino~         2
+## 5 Bacteria Firmicutes Clostridia Clostridiales Eubacteriaceae  Eubact~         2
+## 6 Bacteria Firmicutes Clostridia Clostridiales Ruminococcaceae Clostr~         2</code></pre>
+<p>We notice that <em>Eubacterium</em>, <em>Clostridium</em>, and <em>Ruminococcus</em> can be detected in different families. These taxa are known as polyphyletic and taxonomic resolution is unclear.</p>
+<p>When taxonomic assignments are done following <code>dada2</code>, we have genus and species columns. These can be combine as <code>genus.species</code>.</p>
+<pre class="r"><code># Extract tax_table as tibble last three cols to demonstrate this
+getTaxaTibble(ps)[,6:8]</code></pre>
+<pre><code>## # A tibble: 905 x 3
+##    Family          Genus                        Species       
+##    &lt;chr&gt;           &lt;chr&gt;                        &lt;chr&gt;         
+##  1 Lachnospiraceae Lachnospiraceae NC2004 group &lt;NA&gt;          
+##  2 Ruminococcaceae Ruminococcaceae UCG-013      &lt;NA&gt;          
+##  3 Ruminococcaceae &lt;NA&gt;                         &lt;NA&gt;          
+##  4 Lachnospiraceae Fusicatenibacter             saccharivorans
+##  5 Ruminococcaceae &lt;NA&gt;                         &lt;NA&gt;          
+##  6 Ruminococcaceae &lt;NA&gt;                         &lt;NA&gt;          
+##  7 Lachnospiraceae Roseburia                    &lt;NA&gt;          
+##  8 Ruminococcaceae Butyricicoccus               &lt;NA&gt;          
+##  9 Rikenellaceae   Alistipes                    &lt;NA&gt;          
+## 10 Ruminococcaceae Oscillibacter                &lt;NA&gt;          
+## # ... with 895 more rows</code></pre>
+<p>Unite genus and species columns.</p>
+<pre class="r"><code>ps &lt;- uniteGenusSpeciesNames(ps)
+# check
+getTaxaTibble(ps)[,6:8]</code></pre>
+<pre><code>## # A tibble: 905 x 3
+##    Family          Genus                        Species                        
+##    &lt;chr&gt;           &lt;chr&gt;                        &lt;chr&gt;                          
+##  1 Lachnospiraceae Lachnospiraceae NC2004 group &lt;NA&gt;                           
+##  2 Ruminococcaceae Ruminococcaceae UCG-013      &lt;NA&gt;                           
+##  3 Ruminococcaceae &lt;NA&gt;                         &lt;NA&gt;                           
+##  4 Lachnospiraceae Fusicatenibacter             Fusicatenibacter.saccharivorans
+##  5 Ruminococcaceae &lt;NA&gt;                         &lt;NA&gt;                           
+##  6 Ruminococcaceae &lt;NA&gt;                         &lt;NA&gt;                           
+##  7 Lachnospiraceae Roseburia                    &lt;NA&gt;                           
+##  8 Ruminococcaceae Butyricicoccus               &lt;NA&gt;                           
+##  9 Rikenellaceae   Alistipes                    &lt;NA&gt;                           
+## 10 Ruminococcaceae Oscillibacter                &lt;NA&gt;                           
+## # ... with 895 more rows</code></pre>
+</div>
+<div id="sample" class="section level2">
+<h2>Sample</h2>
+<p>Similarly, one can combine two columns in sample data.</p>
+<pre class="r"><code># Extract tax_table as tibble last three cols to demonstrate this
+getSampleTibble(ps)[,6:8]</code></pre>
+<pre><code>## # A tibble: 589 x 3
+##    sex     age ILI  
+##    &lt;fct&gt; &lt;dbl&gt; &lt;fct&gt;
+##  1 M        72 C    
+##  2 F        71 C    
+##  3 F        66 C    
+##  4 F        70 C    
+##  5 M        69 L1   
+##  6 M        70 C    
+##  7 F        67 L1   
+##  8 M        81 C    
+##  9 F        78 C    
+## 10 F        68 L1   
+## # ... with 579 more rows</code></pre>
+<pre class="r"><code>ps &lt;- uniteSampleColumn(ps,
+                        &quot;united.column&quot;, sex:age,
+                        sep= &quot;:&quot;,
+                        remove = FALSE)
+getSampleTibble(ps)[,6:8]</code></pre>
+<pre><code>## # A tibble: 589 x 3
+##    united.column sex     age
+##    &lt;chr&gt;         &lt;fct&gt; &lt;dbl&gt;
+##  1 M:72          M        72
+##  2 F:71          F        71
+##  3 F:66          F        66
+##  4 F:70          F        70
+##  5 M:69          M        69
+##  6 M:70          M        70
+##  7 F:67          F        67
+##  8 M:81          M        81
+##  9 F:78          F        78
+## 10 F:68          F        68
+## # ... with 579 more rows</code></pre>
+</div>
+<div id="taxa-summary" class="section level2">
+<h2>Taxa summary</h2>
+<p>Obtain a summary of ASVs by Phylum.</p>
+<pre class="r"><code>getTaxaSummary(ps, rank=&quot;Phylum&quot;)</code></pre>
+<pre><code>## # A tibble: 10 x 3
+##    Phylum            Counts  Percent
+##    &lt;chr&gt;              &lt;int&gt;    &lt;dbl&gt;
+##  1 Firmicutes      23934274 76.3    
+##  2 Bacteroidetes    4845579 15.5    
+##  3 Proteobacteria    810484  2.58   
+##  4 Actinobacteria    630148  2.01   
+##  5 Verrucomicrobia   590273  1.88   
+##  6 Euryarchaeota     492906  1.57   
+##  7 Tenericutes        38848  0.124  
+##  8 Cyanobacteria       4694  0.0150 
+##  9 Lentisphaerae       4306  0.0137 
+## 10 Synergistetes       2775  0.00885</code></pre>
+</div>
+</div>
+<div id="alpha-diversity" class="section level1">
+<h1>Alpha diversity</h1>
+<p>We would like to compare phylogenetic diversity between these groups.</p>
+<pre class="r"><code>ps.rare &lt;- rarefy_even_depth(ps, rngseed = 1579)</code></pre>
+<pre><code>## `set.seed(1579)` was used to initialize repeatable random subsampling.</code></pre>
+<pre><code>## Please record this for your records so others can reproduce.</code></pre>
+<pre><code>## Try `set.seed(1579); .Random.seed` for the full vector</code></pre>
+<pre><code>## ...</code></pre>
+<pre class="r"><code># all samples at specific depth
+sample_sums(ps.rare)[1:10]</code></pre>
+<pre><code>##  sample_1  sample_2  sample_3  sample_4  sample_5  sample_6  sample_7  sample_8 
+##     10975     10975     10975     10975     10975     10975     10975     10975 
+##  sample_9 sample_10 
+##     10975     10975</code></pre>
+<div id="phylogenetic" class="section level2">
+<h2>Phylogenetic</h2>
+<p>Calculate phylogenetic diversity.</p>
+<pre class="r"><code># this will calcualte PD and add a new column in phyloseq object.
+ps &lt;- calculatePD(ps.rare, justDF = FALSE)
+
+# we can visualize this with biomeViz::plotByGroup
+biomeViz::plotByGroup(ps,
+                      x.factor=&quot;ILI&quot;,
+                      y.numeric = &quot;PD&quot;) +
+  geom_point(aes(color=ILI),
+             position = position_jitter(width = 0.1),
+             alpha=0.25) +
+  scale_color_manual(values=c(&quot;steelblue&quot;, &quot;brown3&quot;, &quot;grey70&quot;)) +
+  scale_fill_manual(values=c(&quot;steelblue&quot;, &quot;brown3&quot;, &quot;grey70&quot;))</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-15-1.png" width="576" /> We can also see if there is any relationship between PD and age.</p>
+<pre class="r"><code>getSampleTibble(ps) %&gt;% 
+  ggplot(aes(PD, age)) +
+  geom_point(alpha=0.25) +
+  labs(x = &quot;PD&quot;, y = &quot;Age&quot;,
+       subtitle = &quot;PD vs Age&quot;) +
+  ggpubr::stat_cor(method = &quot;spearman&quot;) +
+  geom_smooth(method = &quot;lm&quot;)</code></pre>
+<pre><code>## `geom_smooth()` using formula &#39;y ~ x&#39;</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-16-1.png" width="384" /></p>
+</div>
+<div id="shannon" class="section level2">
+<h2>Shannon</h2>
+<p>We can also calculate other diversity indices from <code>microbiome</code> R pkg and add it to the our phyloseq data.<br />
+For this we use <code>biomeUtils::mutateSampleData()</code> function in combination with <code>microbiome::diversity</code> function.</p>
+<pre class="r"><code>ps &lt;- mutateSampleData(ps,
+                       Shannon = microbiome::diversity(ps, &quot;shannon&quot;)[,1])
+plotByGroup(ps,
+            x.factor=&quot;ILI&quot;,
+            y.numeric = &quot;Shannon&quot;) +
+  geom_point(aes(color=ILI),
+             position = position_jitter(width = 0.1),
+             alpha=0.25) +
+  theme_biomViz() +
+  scale_color_manual(values=c(&quot;steelblue&quot;, &quot;brown3&quot;, &quot;grey70&quot;)) +
+  scale_fill_manual(values=c(&quot;steelblue&quot;, &quot;brown3&quot;, &quot;grey70&quot;))</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-17-1.png" width="384" /></p>
+</div>
+</div>
+<div id="ordination" class="section level1">
+<h1>Ordination</h1>
+<p>A Principal Coordinates Analysis for <code>phyloseq</code> object. To visualize similarities/dissimilarities between samples in 2D ordination. This function extends the <code>phyloseq</code> ordination plots to include taxa that correlate with chosen axis and plots them along with a side boxplot for comparing inter-sample variation within groups.</p>
+<pre class="r"><code>library(biomeUtils)
+library(dplyr)
+library(ggside)</code></pre>
+<pre><code>## Warning: package &#39;ggside&#39; was built under R version 4.1.1</code></pre>
+<pre><code>## Registered S3 method overwritten by &#39;ggside&#39;:
+##   method from   
+##   +.gg   ggplot2</code></pre>
+<pre class="r"><code>ps &lt;- FuentesIliGutData %&gt;%
+  microbiome::transform(&quot;compositional&quot;) %&gt;%
+  mutateTaxaTable(FeatureID = taxa_names(FuentesIliGutData))
+plotPCoA(x =ps,
+         group_var = &quot;ILI&quot;,
+         ord_method = &quot;PCoA&quot;,
+         dist_method = &quot;bray&quot;,
+         seed = 1253,
+         cor_method = &quot;spearman&quot;,
+         verbose = TRUE,
+         padj_cutoff = 0.05,
+         padj_method = &quot;fdr&quot;,
+         arrows = TRUE,
+         label_col = &quot;grey30&quot;,
+         plot_centroids = TRUE,
+         add_side_box = TRUE,
+         axis_plot = c(1:2),
+         point_shape = 21,  # point_shape
+         point_alpha = 0.5) +
+  theme_biomViz() + 
+  scale_color_manual(values = c(&quot;#3d6721&quot;, &quot;#a86826&quot;, &quot;#006c89&quot;)) +
+  scale_fill_manual(values = c(&quot;#3d6721&quot;, &quot;#a86826&quot;, &quot;#006c89&quot;))</code></pre>
+<pre><code>## Random number for permutation analysis ...
+## 1253</code></pre>
+<pre><code>## Warning in .check_taxa_axis(axis.a.tax, axis.b.tax): Second of the choosen axis
+## in `axis_plot` has no taxa satisfying criteria to plot</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-18-1.png" width="768" /></p>
+</div>
+<div id="composition" class="section level1">
+<h1>Composition</h1>
+<div id="abundant-asvs-within-families" class="section level2">
+<h2>Abundant ASVs within Families</h2>
+<pre class="r"><code>plotTopAbundant(FuentesIliGutData,
+                taxa_level = &quot;Family&quot;,
+                top=10,
+                alpha = 0.25,
+                shape = 124,
+                color=&quot;black&quot;,
+                fill = &quot;black&quot;,
+                size=3,
+                width = 0.02) +
+  theme_biomViz()</code></pre>
+<pre><code>## Joining, by = &quot;taxa&quot;</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-19-1.png" width="576" /></p>
+<p>Most ASVs are within <em>Lachnospiraceae</em>, and <em>Ruminococcaceae</em>. These are know abundant families in human gut.</p>
+</div>
+<div id="heatmap" class="section level2">
+<h2>Heatmap</h2>
+<p>Heatmap is useful to visualize patterns in abundances of taxa. Here, we compare abundance profiles of top 10 ASVs.</p>
+<pre class="r"><code>ps.rel &lt;- FuentesIliGutData %&gt;%
+         microbiome::transform(&quot;compositional&quot;)
+select_taxa &lt;- findTopTaxa(ps.rel, top= 10, method=&quot;mean&quot;)
+
+plotTidyHeatmap(ps.rel, select_taxa = select_taxa,
+                group_samples_by = &quot;ILI&quot;,
+                add_taxa_label = TRUE,
+                cluster_rows = FALSE,
+                .scale = &quot;none&quot;,
+                transform = NULL)</code></pre>
+<pre><code>## Registered S3 method overwritten by &#39;dendextend&#39;:
+##   method     from 
+##   rev.hclust vegan</code></pre>
+<pre><code>## tidyHeatmap says: (once per session) from release 1.2.3 the grouping labels have white background by default. To add color for one-ay grouping specify palette_grouping = list(c(&quot;red&quot;, &quot;blue&quot;))</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-20-1.png" width="576" /></p>
+<p>ASV11 <em>Escherichia/Shigella</em> is abundant in some samples from ILI group.</p>
+<p>Check prevalence of top ASVs.</p>
+<pre class="r"><code>prev_tib &lt;- getPrevalence(ps.rel,
+                          return_rank = c(&quot;Family&quot;, &quot;Genus&quot;),
+                          return_taxa = select_taxa,
+                          sort = TRUE)
+
+prev_tib</code></pre>
+<pre><code>##     Taxa prevalence             Family                Genus
+## 1   ASV1  1.0000000    Lachnospiraceae              Blautia
+## 2   ASV4  0.9881154    Lachnospiraceae              Blautia
+## 3   ASV7  0.9813243    Lachnospiraceae     Fusicatenibacter
+## 4   ASV6  0.9779287    Ruminococcaceae      Subdoligranulum
+## 5   ASV2  0.9779287    Ruminococcaceae                 &lt;NA&gt;
+## 6   ASV3  0.9779287    Ruminococcaceae     Faecalibacterium
+## 7   ASV5  0.9626486    Lachnospiraceae          Eubacterium
+## 8   ASV8  0.8879457     Bacteroidaceae          Bacteroides
+## 9  ASV11  0.8353141 Enterobacteriaceae Escherichia/Shigella
+## 10  ASV9  0.5551783     Prevotellaceae         Prevotella 9</code></pre>
+</div>
+<div id="compare-abundances-of-genera" class="section level2">
+<h2>Compare abundances of genera</h2>
+<pre class="r"><code>ps.gen &lt;- ps %&gt;%
+  microbiome::aggregate_taxa(&quot;Genus&quot;) %&gt;%
+  microbiome::transform(&quot;clr&quot;)
+
+# Select taxa and group to compare
+
+plotTaxaRaincloud(ps.gen,
+                  taxa =c(&quot;Blautia&quot;, &quot;Bacteroides&quot;, &quot;Faecalibacterium&quot;,&quot;Prevotella 9&quot;),
+                  group_samples_by = &quot;ILI&quot;,
+                  opacity = 0.25,
+                  shape_point = 21) +
+  scale_color_manual(values=c(&quot;steelblue&quot;, &quot;brown3&quot;, &quot;grey70&quot;)) +
+  scale_fill_manual(values=c(&quot;steelblue&quot;, &quot;brown3&quot;, &quot;grey70&quot;)) +
+  labs(x=&quot;ILI&quot;, y = &quot;Abundance (CLR)&quot;) +
+  theme(strip.text = element_text(face=&quot;italic&quot;))</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-22-1.png" width="576" /></p>
+</div>
+</div>
+<div id="common-statistical-tests" class="section level1">
+<h1>Common statistical tests</h1>
+<p>At present, Kruskal-Wallis and Wilcox Test are stably available in the <code>biomeStats</code> package.</p>
+<div id="kruskal-wallis-test" class="section level2">
+<h2>Kruskal-Wallis Test</h2>
+<p>When more than two groups are present, we use a non-parametric Kruskal-Wallis test to identify significantly different ASVs.</p>
+<pre class="r"><code>ps.rel &lt;- microbiome::aggregate_taxa(ps, &quot;Genus&quot;) %&gt;% 
+  microbiome::transform(&quot;compositional&quot;)
+ps.rel &lt;- core(ps.rel, detection=0.001, prevalence=50/100)
+
+kw_results &lt;- doKruskalWallisTest(ps.rel,
+                                  sample_group = &quot;ILI&quot;,
+                                  adj_method = &quot;BH&quot;,
+                                  effect_size = TRUE) %&gt;% 
+  dplyr::filter(p.adj &lt;= 0.05)</code></pre>
+<pre><code>## Using Comparison as id variables</code></pre>
+<pre><code>## Joining, by = c(&quot;variable&quot;, &quot;.y.&quot;, &quot;n&quot;)</code></pre>
+<pre class="r"><code>print(kw_results)</code></pre>
+<pre><code>## # A tibble: 4 x 12
+##   variable       .y.       n statistic    df       p method   p.adj p.adj.signif
+##   &lt;chr&gt;          &lt;chr&gt; &lt;int&gt;     &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt;       
+## 1 Parabacteroid~ value   589      17.1     2 1.93e-4 Krusk~ 0.00965 **          
+## 2 Bacteria_Firm~ value   589      12.1     2 2.31e-3 Krusk~ 0.0289  *           
+## 3 Fusicatenibac~ value   589      12.8     2 1.67e-3 Krusk~ 0.0278  *           
+## 4 Ruminococcus 1 value   589      13.8     2 1.02e-3 Krusk~ 0.0255  *           
+## # ... with 3 more variables: effsize &lt;dbl&gt;, effsize_method &lt;chr&gt;,
+## #   magnitude &lt;chr&gt;</code></pre>
+<p>Four genera, <em>Parabacteroides</em>, <em>Fusicatenibacter</em>, <em>Ruminococcus 1</em> and <em>Eubacterium</em> (Lachnospiraceae) are significantly different.</p>
+<p>Compare thier abundances between groups.</p>
+<pre class="r"><code># We use CLR abundances to visualize
+ps.clr &lt;- microbiome::aggregate_taxa(ps, &quot;Genus&quot;) %&gt;% 
+  microbiome::transform(&quot;clr&quot;)
+
+plotTaxaRaincloud(ps.clr,
+                  taxa =kw_results$variable,
+                  group_samples_by = &quot;ILI&quot;,
+                  opacity = 0.5,
+                  shape_point = 21) +
+  scale_color_manual(values=c(&quot;steelblue&quot;, &quot;brown3&quot;, &quot;grey70&quot;)) +
+  scale_fill_manual(values=c(&quot;steelblue&quot;, &quot;brown3&quot;, &quot;grey70&quot;)) +
+  labs(x=&quot;ILI&quot;, y = &quot;Abundance (CLR)&quot;, subtitle = &quot;Significantly different genera&quot;) +
+  theme(strip.text = element_text(face=&quot;italic&quot;))</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-24-1.png" width="768" /></p>
+</div>
+<div id="paired-wilcox-test" class="section level2">
+<h2>Paired Wilcox Test</h2>
+<p>Within the ILI group, there are participants who had given samples at two visits. We use select these participants.</p>
+<pre class="r"><code>two.vis.part &lt;- filterSampleData(ps, ILI != &quot;C&quot;) %&gt;% 
+  getSampleTibble() %&gt;% 
+  count(participant_id) %&gt;% 
+  filter(n == 2) %&gt;% 
+  pull(participant_id)
+
+ps &lt;- mutateSampleData(ps, two.visits = ifelse(participant_id %in%two.vis.part, 
+                                               &quot;Yes&quot;, &quot;No&quot;))
+
+ps.paired.ili &lt;- filterSampleData(ps, two.visits == &quot;Yes&quot;)
+
+ps.paired.ili.rel &lt;- microbiome::aggregate_taxa(ps.paired.ili, &quot;Genus&quot;) %&gt;% 
+  microbiome::transform(&quot;compositional&quot;)
+
+ps.paired.ili.rel &lt;- core(ps.paired.ili.rel, detection=0.001, prevalence=50/100)
+
+wilcox_results &lt;- doWilcoxTest(ps.paired.ili.rel,
+                               sample_group = &quot;ILI&quot;,
+                               paired = TRUE,
+                               adj_method = &quot;BH&quot;,
+                               alternative = &quot;greater&quot;) %&gt;%
+                  dplyr::filter(p.adj &lt;= 0.05)</code></pre>
+<pre><code>## Using Comparison as id variables</code></pre>
+<pre class="r"><code>wilcox_results</code></pre>
+<pre><code>## # A tibble: 3 x 10
+##   variable .y.   group1 group2    n1    n2 statistic       p  p.adj p.adj.signif
+##   &lt;fct&gt;    &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;       
+## 1 Bactero~ value L1     L2       192   192     11620 0.00112 0.0258 *           
+## 2 Parabac~ value L1     L2       192   192     11769 0.00058 0.0258 *           
+## 3 Bacteri~ value L1     L2       192   192     11400 0.0028  0.0429 *</code></pre>
+<p>Compare their abundances between groups.<br />
+<em>Bacteroides</em></p>
+<pre class="r"><code># We use CLR abundances to visualize
+ps.paired.ili.clr &lt;- microbiome::aggregate_taxa(ps.paired.ili, &quot;Genus&quot;) %&gt;% 
+  microbiome::transform(&quot;compositional&quot;)
+# raincloud
+bac.ab.plot &lt;- plotTaxaRaincloud(ps.paired.ili.clr,
+                                 taxa = &quot;Bacteroides&quot;,
+                                 group_samples_by = &quot;ILI&quot;,
+                                 opacity = 0.5,
+                                 shape_point = 21) +
+  scale_color_manual(values=c(&quot;brown3&quot;, &quot;grey70&quot;)) +
+  scale_fill_manual(values=c(&quot;brown3&quot;, &quot;grey70&quot;)) +
+  labs(x=&quot;&quot;, y = &quot;Relative abundance &quot;, subtitle = &quot;Bacteroides&quot;) +
+  theme(strip.text = element_text(face=&quot;italic&quot;),
+        plot.subtitle = element_text(face=&quot;italic&quot;))
+
+# Prevalence  
+bac.prev.l1 &lt;- microbiome::aggregate_taxa(ps.paired.ili, &quot;Genus&quot;) %&gt;% 
+  filterSampleData(ILI==&quot;L1&quot;) %&gt;% 
+  getPrevalence(return_taxa = &quot;Bacteroides&quot;, return_rank = &quot;Genus&quot;) %&gt;% 
+  pull(prevalence)
+  
+bac.prev.l2 &lt;- microbiome::aggregate_taxa(ps.paired.ili, &quot;Genus&quot;) %&gt;% 
+  filterSampleData(ILI==&quot;L2&quot;) %&gt;% 
+  getPrevalence(return_taxa = &quot;Bacteroides&quot;, return_rank = &quot;Genus&quot;) %&gt;% 
+  pull(prevalence) 
+
+bac.tib &lt;- tibble(Genus=c(&quot;Bacteroides&quot;,&quot;Bacteroides&quot;),
+              prev = c(bac.prev.l1,bac.prev.l2),
+              group = c(&quot;L1&quot;, &quot;L2&quot;))
+
+bac.prev.plot &lt;- bac.tib %&gt;% 
+  ggplot(aes(group, prev)) +
+  geom_col(aes(fill=group), width = 0.5,
+           alpha=0.5) +
+  scale_fill_manual(values=c(&quot;brown3&quot;, &quot;grey70&quot;)) +
+  labs(x=&quot;&quot;, y = &quot;&quot;, subtitle = &quot;Prevalence&quot;) +
+  scale_y_continuous(position = &quot;right&quot;) +
+  theme(legend.position = &quot;none&quot;)</code></pre>
+<p><em>Parabacteroides</em></p>
+<pre class="r"><code>parabac.ab.plot &lt;- plotTaxaRaincloud(ps.paired.ili.clr,
+                                 taxa = &quot;Parabacteroides&quot;,
+                                 group_samples_by = &quot;ILI&quot;,
+                                 opacity = 0.5,
+                                 shape_point = 21) +
+  scale_color_manual(values=c(&quot;brown3&quot;, &quot;grey70&quot;)) +
+  scale_fill_manual(values=c(&quot;brown3&quot;, &quot;grey70&quot;)) +
+  labs(x=&quot;&quot;, y = &quot;Relative abundance &quot;, subtitle = &quot;Parabacteroides&quot;) +
+  theme(strip.text = element_text(face=&quot;italic&quot;),
+        plot.subtitle = element_text(face=&quot;italic&quot;))
+
+# Prevalence  
+parbac.prev.l1 &lt;- microbiome::aggregate_taxa(ps.paired.ili, &quot;Genus&quot;) %&gt;% 
+  filterSampleData(ILI==&quot;L1&quot;) %&gt;% 
+  getPrevalence(return_taxa = &quot;Parabacteroides&quot;, return_rank = &quot;Genus&quot;) %&gt;% 
+  pull(prevalence)
+  
+parbac.prev.l2 &lt;- microbiome::aggregate_taxa(ps.paired.ili, &quot;Genus&quot;) %&gt;% 
+  filterSampleData(ILI==&quot;L2&quot;) %&gt;% 
+  getPrevalence(return_taxa = &quot;Parabacteroides&quot;, return_rank = &quot;Genus&quot;) %&gt;% 
+  pull(prevalence) 
+
+parabac.tib &lt;- tibble(Genus=c(&quot;Parabacteroides&quot;,&quot;Parabacteroides&quot;),
+                      prev = c(parbac.prev.l1,parbac.prev.l2),
+                      group = c(&quot;L1&quot;, &quot;L2&quot;))
+
+parabac.tib.plot &lt;- parabac.tib %&gt;% 
+  ggplot(aes(group, prev)) +
+  geom_col(aes(fill=group), width = 0.5,
+           alpha=0.5) +
+  scale_fill_manual(values=c(&quot;brown3&quot;, &quot;grey70&quot;)) +
+  labs(x=&quot;&quot;, y = &quot;&quot;, subtitle = &quot;Prevalence&quot;) +
+  scale_y_continuous(position = &quot;right&quot;) +
+  theme(legend.position = &quot;none&quot;)</code></pre>
+<div id="adding-p-value" class="section level3">
+<h3>Adding p-value</h3>
+<p>To add p-values to the plot, we can use <code>ggsignif</code>.</p>
+<pre class="r"><code># get comparisons
+comparsions.list &lt;- as.character(unique(bac.ab.plot$data$ILI))
+
+# bacteroides
+get_pval_bac &lt;- wilcox_results %&gt;% 
+  filter(variable == &quot;Bacteroides&quot;) 
+
+bac.ab.plot &lt;- bac.ab.plot +
+  ggsignif::geom_signif(
+    comparisons = list(comparsions.list),
+    y_position = max(bac.ab.plot$data$Abundance)+0.05, tip_length = 0.03, vjust = 0.2,
+    annotation = get_pval_bac$p.adj.signif,
+    color= &quot;grey30&quot;,
+    textsize = 3)
+
+# parabacteroides
+get_pval_parabac &lt;- wilcox_results %&gt;% 
+  filter(variable == &quot;Parabacteroides&quot;) 
+
+parabac.ab.plot &lt;- parabac.ab.plot +
+  ggsignif::geom_signif(
+    comparisons = list(comparsions.list),
+    y_position = max(parabac.ab.plot$data$Abundance)+0.05, tip_length = 0.03, vjust = 0.2,
+    annotation = get_pval_parabac$p.adj.signif,
+    color= &quot;grey30&quot;,
+    textsize = 3)</code></pre>
+<p>Combine plots.</p>
+<pre class="r"><code> (bac.ab.plot + bac.prev.plot + plot_layout(widths = c(8,1)))/ (parabac.ab.plot + parabac.tib.plot + plot_layout(widths = c(8,1)))</code></pre>
+<p><img src="01_RIVM-ToolBoxCaseStudy_files/figure-html/unnamed-chunk-29-1.png" width="384" /></p>
+<pre class="r"><code>devtools::session_info()</code></pre>
+<pre><code>## - Session info ---------------------------------------------------------------
+##  setting  value                       
+##  version  R version 4.1.0 (2021-05-18)
+##  os       Windows 10 x64              
+##  system   x86_64, mingw32             
+##  ui       RTerm                       
+##  language (EN)                        
+##  collate  English_United States.1252  
+##  ctype    English_United States.1252  
+##  tz       Europe/Berlin               
+##  date     2021-10-18                  
+## 
+## - Packages -------------------------------------------------------------------
+##  ! package          * version  date       lib source        
+##    abind              1.4-5    2016-07-21 [1] CRAN (R 4.1.0)
+##    ade4               1.7-16   2020-10-28 [1] CRAN (R 4.1.0)
+##    ape                5.5      2021-04-25 [1] CRAN (R 4.1.0)
+##    assertthat         0.2.1    2019-03-21 [1] CRAN (R 4.1.0)
+##    backports          1.2.1    2020-12-09 [1] CRAN (R 4.1.0)
+##    Biobase            2.51.0   2021-03-09 [1] Bioconductor  
+##    BiocGenerics       0.38.0   2021-05-19 [1] Bioconductor  
+##    biomeStats       * 00.00.03 2021-09-07 [1] local         
+##    biomeUtils       * 0.012    2021-07-06 [1] local         
+##    biomeViz         * 0.0.03   2021-10-18 [1] local         
+##    biomformat         1.20.0   2021-05-19 [1] Bioconductor  
+##    Biostrings         2.59.4   2021-05-16 [1] Bioconductor  
+##    bit                4.0.4    2020-08-04 [1] CRAN (R 4.1.0)
+##    bit64              4.0.5    2020-08-30 [1] CRAN (R 4.1.0)
+##    bitops             1.0-7    2021-04-24 [1] CRAN (R 4.1.0)
+##    blob               1.2.2    2021-07-23 [1] CRAN (R 4.1.1)
+##    broom              0.7.9    2021-07-27 [1] CRAN (R 4.1.1)
+##    bslib              0.3.1    2021-10-06 [1] CRAN (R 4.1.1)
+##    cachem             1.0.5    2021-05-15 [1] CRAN (R 4.1.0)
+##    Cairo              1.5-12.2 2020-07-07 [1] CRAN (R 4.1.0)
+##    callr              3.7.0    2021-04-20 [1] CRAN (R 4.1.0)
+##    car                3.0-11   2021-06-27 [1] CRAN (R 4.1.1)
+##    carData            3.0-4    2020-05-22 [1] CRAN (R 4.1.0)
+##    cellranger         1.1.0    2016-07-27 [1] CRAN (R 4.1.0)
+##    circlize           0.4.13   2021-06-09 [1] CRAN (R 4.1.1)
+##    cli                3.0.1    2021-07-17 [1] CRAN (R 4.1.1)
+##    clue               0.3-59   2021-04-16 [1] CRAN (R 4.1.1)
+##    cluster            2.1.2    2021-04-17 [2] CRAN (R 4.1.0)
+##    codetools          0.2-18   2020-11-04 [2] CRAN (R 4.1.0)
+##    coin               1.4-2    2021-10-08 [1] CRAN (R 4.1.1)
+##    colorspace         2.0-1    2021-05-04 [1] CRAN (R 4.1.0)
+##    ComplexHeatmap     2.8.0    2021-05-19 [1] Bioconductor  
+##    crayon             1.4.1    2021-02-08 [1] CRAN (R 4.1.0)
+##    curl               4.3.2    2021-06-23 [1] CRAN (R 4.1.1)
+##    data.table         1.14.0   2021-02-21 [1] CRAN (R 4.1.0)
+##    DBI                1.1.1    2021-01-15 [1] CRAN (R 4.1.0)
+##    DECIPHER           2.20.0   2021-05-19 [1] Bioconductor  
+##    dendextend         1.15.1   2021-05-08 [1] CRAN (R 4.1.1)
+##    desc               1.4.0    2021-09-28 [1] CRAN (R 4.1.1)
+##    devtools           2.4.2    2021-06-07 [1] CRAN (R 4.1.1)
+##    digest             0.6.27   2020-10-24 [1] CRAN (R 4.1.0)
+##    distributional     0.2.2    2021-02-02 [1] CRAN (R 4.1.1)
+##    doParallel         1.0.16   2020-10-16 [1] CRAN (R 4.1.1)
+##    dplyr            * 1.0.6    2021-05-05 [1] CRAN (R 4.1.0)
+##    ellipsis           0.3.2    2021-04-29 [1] CRAN (R 4.1.0)
+##    evaluate           0.14     2019-05-28 [1] CRAN (R 4.1.0)
+##    fansi              0.4.2    2021-01-15 [1] CRAN (R 4.1.0)
+##    farver             2.1.0    2021-02-28 [1] CRAN (R 4.1.0)
+##    fastmap            1.1.0    2021-01-25 [1] CRAN (R 4.1.0)
+##    fastmatch          1.1-3    2021-07-23 [1] CRAN (R 4.1.0)
+##    forcats            0.5.1    2021-01-27 [1] CRAN (R 4.1.0)
+##    foreach            1.5.1    2020-10-15 [1] CRAN (R 4.1.0)
+##    foreign            0.8-81   2020-12-22 [2] CRAN (R 4.1.0)
+##    fs                 1.5.0    2020-07-31 [1] CRAN (R 4.1.0)
+##    generics           0.1.0    2020-10-31 [1] CRAN (R 4.1.0)
+##    GenomeInfoDb       1.28.4   2021-09-05 [1] Bioconductor  
+##    GenomeInfoDbData   1.2.6    2021-05-20 [1] Bioconductor  
+##    GetoptLong         1.0.5    2020-12-15 [1] CRAN (R 4.1.1)
+##    ggdist             3.0.0    2021-07-19 [1] CRAN (R 4.1.1)
+##    gghalves           0.1.1    2020-11-08 [1] CRAN (R 4.1.1)
+##    ggplot2          * 3.3.5    2021-06-25 [1] CRAN (R 4.1.1)
+##    ggpubr             0.4.0    2020-06-27 [1] CRAN (R 4.1.0)
+##    ggrepel            0.9.1    2021-01-15 [1] CRAN (R 4.1.0)
+##    ggside           * 0.1.2    2021-07-21 [1] CRAN (R 4.1.1)
+##    ggsignif         * 0.6.3    2021-09-09 [1] CRAN (R 4.1.0)
+##    GlobalOptions      0.1.2    2020-06-10 [1] CRAN (R 4.1.1)
+##    glue               1.4.2    2020-08-27 [1] CRAN (R 4.1.0)
+##    gridExtra          2.3      2017-09-09 [1] CRAN (R 4.1.0)
+##    gtable             0.3.0    2019-03-25 [1] CRAN (R 4.1.0)
+##    haven              2.4.3    2021-08-04 [1] CRAN (R 4.1.1)
+##    highr              0.9      2021-04-16 [1] CRAN (R 4.1.0)
+##    hms                1.1.1    2021-09-26 [1] CRAN (R 4.1.1)
+##    htmltools          0.5.2    2021-08-25 [1] CRAN (R 4.1.1)
+##    igraph             1.2.6    2020-10-06 [1] CRAN (R 4.1.0)
+##    IRanges            2.25.11  2021-05-05 [1] Bioconductor  
+##    iterators          1.0.13   2020-10-15 [1] CRAN (R 4.1.0)
+##    jquerylib          0.1.4    2021-04-26 [1] CRAN (R 4.1.0)
+##    jsonlite           1.7.2    2020-12-09 [1] CRAN (R 4.1.0)
+##    knitr              1.36     2021-09-29 [1] CRAN (R 4.1.1)
+##    labeling           0.4.2    2020-10-20 [1] CRAN (R 4.1.0)
+##    lattice            0.20-44  2021-05-02 [2] CRAN (R 4.1.0)
+##    libcoin            1.0-9    2021-09-27 [1] CRAN (R 4.1.1)
+##    lifecycle          1.0.1    2021-09-24 [1] CRAN (R 4.1.1)
+##    magrittr           2.0.1    2020-11-17 [1] CRAN (R 4.1.0)
+##    MASS               7.3-54   2021-05-03 [2] CRAN (R 4.1.0)
+##    Matrix             1.3-3    2021-05-04 [2] CRAN (R 4.1.0)
+##    matrixStats        0.61.0   2021-09-17 [1] CRAN (R 4.1.1)
+##    memoise            2.0.0    2021-01-26 [1] CRAN (R 4.1.0)
+##    mgcv               1.8-35   2021-04-18 [2] CRAN (R 4.1.0)
+##    microbiome       * 1.14.0   2021-05-19 [1] Bioconductor  
+##    modeltools         0.2-23   2020-03-05 [1] CRAN (R 4.1.0)
+##    multcomp           1.4-17   2021-04-29 [1] CRAN (R 4.1.1)
+##    multtest           2.47.0   2021-03-08 [1] Bioconductor  
+##    munsell            0.5.0    2018-06-12 [1] CRAN (R 4.1.0)
+##    mvtnorm            1.1-3    2021-10-08 [1] CRAN (R 4.1.1)
+##    nlme               3.1-152  2021-02-04 [2] CRAN (R 4.1.0)
+##    openxlsx           4.2.4    2021-06-16 [1] CRAN (R 4.1.1)
+##    patchwork        * 1.1.1    2020-12-17 [1] CRAN (R 4.1.0)
+##    permute            0.9-5    2019-03-12 [1] CRAN (R 4.1.0)
+##    phangorn           2.7.1    2021-07-13 [1] CRAN (R 4.1.1)
+##    phyloseq         * 1.36.0   2021-05-19 [1] Bioconductor  
+##    picante            1.8.2    2020-06-10 [1] CRAN (R 4.1.0)
+##    pillar             1.6.3    2021-09-26 [1] CRAN (R 4.1.1)
+##    pkgbuild           1.2.0    2020-12-15 [1] CRAN (R 4.1.0)
+##    pkgconfig          2.0.3    2019-09-22 [1] CRAN (R 4.1.0)
+##    pkgload            1.2.3    2021-10-13 [1] CRAN (R 4.1.0)
+##    plyr               1.8.6    2020-03-03 [1] CRAN (R 4.1.0)
+##    png                0.1-7    2013-12-03 [1] CRAN (R 4.1.0)
+##    prettyunits        1.1.1    2020-01-24 [1] CRAN (R 4.1.0)
+##    processx           3.5.2    2021-04-30 [1] CRAN (R 4.1.0)
+##    progress           1.2.2    2019-05-16 [1] CRAN (R 4.1.0)
+##    ps                 1.6.0    2021-02-28 [1] CRAN (R 4.1.0)
+##    purrr              0.3.4    2020-04-17 [1] CRAN (R 4.1.0)
+##    quadprog           1.5-8    2019-11-20 [1] CRAN (R 4.1.0)
+##    R6                 2.5.1    2021-08-19 [1] CRAN (R 4.1.1)
+##    RColorBrewer       1.1-2    2014-12-07 [1] CRAN (R 4.1.0)
+##    Rcpp               1.0.7    2021-07-07 [1] CRAN (R 4.1.1)
+##    RCurl              1.98-1.3 2021-03-16 [1] CRAN (R 4.1.0)
+##    readxl             1.3.1    2019-03-13 [1] CRAN (R 4.1.0)
+##    remotes            2.4.1    2021-09-29 [1] CRAN (R 4.1.1)
+##    reshape2           1.4.4    2020-04-09 [1] CRAN (R 4.1.0)
+##    rhdf5              2.35.5   2021-05-10 [1] Bioconductor  
+##  D rhdf5filters       1.3.5    2021-04-30 [1] Bioconductor  
+##    Rhdf5lib           1.13.7   2021-05-07 [1] Bioconductor  
+##    rio                0.5.27   2021-06-21 [1] CRAN (R 4.1.1)
+##    rjson              0.2.20   2018-06-08 [1] CRAN (R 4.1.1)
+##    rlang              0.4.11   2021-04-30 [1] CRAN (R 4.1.0)
+##    rmarkdown          2.11     2021-09-14 [1] CRAN (R 4.1.1)
+##    rprojroot          2.0.2    2020-11-15 [1] CRAN (R 4.1.0)
+##    RSQLite            2.2.8    2021-08-21 [1] CRAN (R 4.1.1)
+##    rstatix            0.7.0    2021-02-13 [1] CRAN (R 4.1.0)
+##    rstudioapi         0.13     2020-11-12 [1] CRAN (R 4.1.0)
+##    Rtsne              0.15     2018-11-10 [1] CRAN (R 4.1.0)
+##    S4Vectors          0.29.19  2021-05-06 [1] Bioconductor  
+##    sandwich           3.0-1    2021-05-18 [1] CRAN (R 4.1.1)
+##    sass               0.4.0    2021-05-12 [1] CRAN (R 4.1.0)
+##    scales             1.1.1    2020-05-11 [1] CRAN (R 4.1.0)
+##    sessioninfo        1.1.1    2018-11-05 [1] CRAN (R 4.1.0)
+##    shape              1.4.6    2021-05-19 [1] CRAN (R 4.1.1)
+##    stringi            1.6.2    2021-05-17 [1] CRAN (R 4.1.0)
+##    stringr            1.4.0    2019-02-10 [1] CRAN (R 4.1.0)
+##    survival           3.2-11   2021-04-26 [2] CRAN (R 4.1.0)
+##    testthat           3.1.0    2021-10-04 [1] CRAN (R 4.1.1)
+##    TH.data            1.1-0    2021-09-27 [1] CRAN (R 4.1.1)
+##    tibble             3.1.2    2021-05-16 [1] CRAN (R 4.1.0)
+##    tidyHeatmap        1.3.1    2021-07-07 [1] CRAN (R 4.1.1)
+##    tidyr              1.1.3    2021-03-03 [1] CRAN (R 4.1.0)
+##    tidyselect         1.1.1    2021-04-30 [1] CRAN (R 4.1.0)
+##    usethis            2.1.0    2021-10-16 [1] CRAN (R 4.1.0)
+##    utf8               1.2.1    2021-03-12 [1] CRAN (R 4.1.0)
+##    vctrs              0.3.8    2021-04-29 [1] CRAN (R 4.1.0)
+##    vegan              2.5-7    2020-11-28 [1] CRAN (R 4.1.0)
+##    viridis            0.6.2    2021-10-13 [1] CRAN (R 4.1.0)
+##    viridisLite        0.4.0    2021-04-13 [1] CRAN (R 4.1.0)
+##    withr              2.4.2    2021-04-18 [1] CRAN (R 4.1.0)
+##    xfun               0.23     2021-05-15 [1] CRAN (R 4.1.0)
+##    XVector            0.31.1   2021-03-08 [1] Bioconductor  
+##    yaml               2.2.1    2020-02-01 [1] CRAN (R 4.1.0)
+##    zip                2.2.0    2021-05-31 [1] CRAN (R 4.1.1)
+##    zlibbioc           1.37.0   2021-03-09 [1] Bioconductor  
+##    zoo                1.8-9    2021-03-09 [1] CRAN (R 4.1.1)
+## 
+## [1] C:/Users/shettys/Documents/R/win-library/4.1
+## [2] C:/Program Files/R/R-4.1.0/library
+## 
+##  D -- DLL MD5 mismatch, broken installation.</code></pre>
+</div>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

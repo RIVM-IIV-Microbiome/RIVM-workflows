@@ -3,11 +3,6 @@ title: "Common microbiota analysis workflow using RIVM-Toolbox"
 subtitle: "Comparison of gut microbiota in older adults with and without ILI"
 author: "Sudarshan A. Shetty"
 date: "`r date()`"
-knit: (function(inputFile, encoding) { 
-      out_dir <- '../docs';
-      rmarkdown::render(inputFile,
-                        encoding=encoding, 
-                        output_file=file.path(dirname(inputFile), out_dir, 'RIVM-ToolBoxCaseStudy.html')) })
 output: 
   html_document: 
     toc: yes
