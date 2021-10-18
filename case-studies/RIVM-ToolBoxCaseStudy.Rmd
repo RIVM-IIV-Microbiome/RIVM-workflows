@@ -1,0 +1,521 @@
+---
+title: "Common microbiota analysis workflow using RIVM-Toolbox"
+subtitle: "Comparison of gut microbiota in older adults with and without ILI"
+author: "Sudarshan A. Shetty"
+date: "`r date()`"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---  
+
+In this workflow, we demonstrate the use of RIVM-toolbox for common microbiome data analytics. 
+We use the data from Fuentes S, et al. (2021) Associations of faecal microbiota with influenza-like illness in participants aged 60 years or older: an observational study. [The Lancet Healthy Longevity](https://doi.org/10.1016/S2666-7568(20)30034-9), 2(1):e13-23.  
+
+
+# Setup  
+
+Initiate the analysis by loading the RIVM-Toolbox ( _biomeUtils_, _biomeViz_ and _biomeStats_) and other handy external R packages.  
+
+## Packages  
+```{r load-pkg, message=FALSE, warning=FALSE}
+# RIVM toolbox
+library(biomeUtils)
+library(biomeViz)
+library(biomeStats)
+# External
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+library(microbiome)
+library(ggsignif)
+```
+
+## Theme  
+Theme for data visualization.  
+```{r}
+## change global theme settings (for all following plots)
+theme_set(theme_biomViz(base_size = 12))
+
+```
+
+## Data  
+
+Load the example data.  
+```{r}
+ps <- FuentesIliGutData
+```
+
+```{r}
+# Check main comparison variable.
+ps %>% getSampleTibble() %>% 
+  dplyr::count(ILI)
+```
+
+There are 184 controls, 213 ILI samples from visit-1 and 192 ILI samples after recovery visit-2.  
+
+# QC  
+Before starting detailed analysis, it is important to check and explore the data.  
+Here, we explore basic sample and ASVs features.  
+```{r}
+qc_Data <- calculateQC(ps)
+qc_Data
+```
+## Samples  
+We would like to check if there is some association between sequencing depth with number of ASVs we detect.  
+```{r fig.height=4, fig.width=6}
+sample_qc <- qc_Data$SampleQC
+
+sample_qc %>% 
+  ggplot(aes(sample_total_taxa, sample_total_reads)) +
+  geom_point(alpha=0.25) +
+  labs(x="No. of ASVs", y = "No. of reads",
+       subtitle = "No. of ASVs vs No. of reads")
+
+```
+
+## Taxa 
+Next we check some features of ASVs.
+```{r fig.height=4, fig.width=10}
+taxa_qc <- qc_Data$TaxaQC
+
+p1 <- taxa_qc %>% 
+  ggplot(aes(taxa_prevalence , taxa_mean_counts)) +
+  geom_point(alpha=0.25) +
+  labs(x = "Prevalence of ASVs", y = "Mean counts of ASVs",
+       subtitle = "Prevalence vs Mean Counts")
+
+p2 <- taxa_qc %>% 
+  ggplot(aes(taxa_cv , taxa_mean_counts)) +
+  geom_point(alpha=0.25) +
+  labs(x = "C.V ASVs", y = "Mean counts of ASVs",
+       subtitle = "Coeficient of Variation vs Mean Counts")
+
+p3 <- taxa_qc %>% 
+  ggplot(aes(taxa_cv , taxa_prevalence)) +
+  geom_point(alpha=0.25) +
+  labs(x = "C.V ASVs", y = "Prevalence",
+       subtitle = "Coeficient of Variation vs Prevalence")
+
+p1 | p2 | p3 
+```
+
+These plots indicate a common feature of microbiome sequencing studies. ASVs with lower prevalence and abundances tend to have high variation (noisy ASVs). Several of the downstream analysis can be affected by these ASVs.  
+
+## Taxonomy   
+Check if the more abundance-prevalent ASVs have better taxonomic assignments.  
+```{r}
+p1 <- trendAbundanceAssignment(ps,
+                              quantiles = seq(0, 95, by = 5),
+                              plot=TRUE)
+p1 + ggplot2::scale_colour_brewer("", palette = "Set2") +
+    ggplot2::theme(axis.text.x = element_text(angle=90, vjust=0.5)) +
+  labs(subtitle = "Trend in abundance and taxonomic assignment")
+```
+Check taxonomic assignments of ASVs. 
+```{r}
+summarizeTaxonomicAssignments(ps)
+```
+
+Now check the taxonomic assignments of ASVs.  
+Useful to check this before aggregating at any level. 
+```{r}
+polydf <- checkPolyphyletic(ps)
+polydf
+```
+
+We notice that _Eubacterium_, _Clostridium_, and _Ruminococcus_ can be detected in different families. These taxa are known as polyphyletic and taxonomic resolution is unclear.  
+
+When taxonomic assignments are done following `dada2`, we have genus and species columns. These can be combine as `genus.species`. 
+
+```{r}
+# Extract tax_table as tibble last three cols to demonstrate this
+getTaxaTibble(ps)[,6:8]
+```
+Unite genus and species columns.   
+```{r}
+ps <- uniteGenusSpeciesNames(ps)
+# check
+getTaxaTibble(ps)[,6:8]
+```
+
+## Sample  
+Similarly, one can combine two columns in sample data. 
+```{r}
+# Extract tax_table as tibble last three cols to demonstrate this
+getSampleTibble(ps)[,6:8]
+ps <- uniteSampleColumn(ps,
+                        "united.column", sex:age,
+                        sep= ":",
+                        remove = FALSE)
+getSampleTibble(ps)[,6:8]
+```
+
+
+## Taxa summary  
+Obtain a summary of ASVs by Phylum. 
+```{r}
+getTaxaSummary(ps, rank="Phylum")
+```
+
+# Alpha diversity  
+
+We would like to compare phylogenetic diversity between these groups. 
+
+```{r}
+ps.rare <- rarefy_even_depth(ps, rngseed = 1579)
+
+# all samples at specific depth
+sample_sums(ps.rare)[1:10]
+```
+## Phylogenetic  
+Calculate phylogenetic diversity.  
+```{r fig.height=4, fig.width=6}
+# this will calcualte PD and add a new column in phyloseq object.
+ps <- calculatePD(ps.rare, justDF = FALSE)
+
+# we can visualize this with biomeViz::plotByGroup
+biomeViz::plotByGroup(ps,
+                      x.factor="ILI",
+                      y.numeric = "PD") +
+  geom_point(aes(color=ILI),
+             position = position_jitter(width = 0.1),
+             alpha=0.25) +
+  scale_color_manual(values=c("steelblue", "brown3", "grey70")) +
+  scale_fill_manual(values=c("steelblue", "brown3", "grey70"))
+
+```
+We can also see if there is any relationship between PD and age. 
+```{r fig.height=4, fig.width=4}
+getSampleTibble(ps) %>% 
+  ggplot(aes(PD, age)) +
+  geom_point(alpha=0.25) +
+  labs(x = "PD", y = "Age",
+       subtitle = "PD vs Age") +
+  ggpubr::stat_cor(method = "spearman") +
+  geom_smooth(method = "lm")
+
+```
+
+## Shannon  
+We can also calculate other diversity indices from `microbiome` R pkg and add it to the our phyloseq data.  
+For this we use `biomeUtils::mutateSampleData()` function in combination with `microbiome::diversity` function. 
+```{r fig.height=4, fig.width=4}
+
+ps <- mutateSampleData(ps,
+                       Shannon = microbiome::diversity(ps, "shannon")[,1])
+plotByGroup(ps,
+            x.factor="ILI",
+            y.numeric = "Shannon") +
+  geom_point(aes(color=ILI),
+             position = position_jitter(width = 0.1),
+             alpha=0.25) +
+  theme_biomViz() +
+  scale_color_manual(values=c("steelblue", "brown3", "grey70")) +
+  scale_fill_manual(values=c("steelblue", "brown3", "grey70"))
+
+```
+
+# Ordination  
+A Principal Coordinates Analysis for `phyloseq` object. To visualize similarities/dissimilarities between samples in 2D ordination. This function extends the `phyloseq` ordination plots to include taxa that correlate with chosen axis and plots them along with a side boxplot for comparing inter-sample variation within groups.  
+
+```{r fig.height=5, fig.width=8}
+library(biomeUtils)
+library(dplyr)
+library(ggside)
+ps <- FuentesIliGutData %>%
+  microbiome::transform("compositional") %>%
+  mutateTaxaTable(FeatureID = taxa_names(FuentesIliGutData))
+plotPCoA(x =ps,
+         group_var = "ILI",
+         ord_method = "PCoA",
+         dist_method = "bray",
+         seed = 1253,
+         cor_method = "spearman",
+         verbose = TRUE,
+         padj_cutoff = 0.05,
+         padj_method = "fdr",
+         arrows = TRUE,
+         label_col = "grey30",
+         plot_centroids = TRUE,
+         add_side_box = TRUE,
+         axis_plot = c(1:2),
+         point_shape = 21,  # point_shape
+         point_alpha = 0.5) +
+  theme_biomViz() + 
+  scale_color_manual(values = c("#3d6721", "#a86826", "#006c89")) +
+  scale_fill_manual(values = c("#3d6721", "#a86826", "#006c89"))
+```
+
+# Composition  
+
+## Abundant ASVs within Families  
+```{r fig.height=4, fig.width=6}
+plotTopAbundant(FuentesIliGutData,
+                taxa_level = "Family",
+                top=10,
+                alpha = 0.25,
+                shape = 124,
+                color="black",
+                fill = "black",
+                size=3,
+                width = 0.02) +
+  theme_biomViz()
+
+```
+
+Most ASVs are within _Lachnospiraceae_, and _Ruminococcaceae_. These are know abundant families in human gut.   
+
+## Heatmap  
+Heatmap is useful to visualize patterns in abundances of taxa. Here, we compare abundance profiles of top 10 ASVs.   
+
+```{r fig.height=4, fig.width=6}
+ps.rel <- FuentesIliGutData %>%
+         microbiome::transform("compositional")
+select_taxa <- findTopTaxa(ps.rel, top= 10, method="mean")
+
+plotTidyHeatmap(ps.rel, select_taxa = select_taxa,
+                group_samples_by = "ILI",
+                add_taxa_label = TRUE,
+                cluster_rows = FALSE,
+                .scale = "none",
+                transform = NULL)
+```
+
+ASV11 _Escherichia/Shigella_ is abundant in some samples from ILI group. 
+
+Check prevalence of top ASVs.  
+```{r}
+prev_tib <- getPrevalence(ps.rel,
+                          return_rank = c("Family", "Genus"),
+                          return_taxa = select_taxa,
+                          sort = TRUE)
+
+prev_tib
+```
+
+## Compare abundances of genera    
+
+```{r fig.height=4, fig.width=6}
+ps.gen <- ps %>%
+  microbiome::aggregate_taxa("Genus") %>%
+  microbiome::transform("clr")
+
+# Select taxa and group to compare
+
+plotTaxaRaincloud(ps.gen,
+                  taxa =c("Blautia", "Bacteroides", "Faecalibacterium","Prevotella 9"),
+                  group_samples_by = "ILI",
+                  opacity = 0.25,
+                  shape_point = 21) +
+  scale_color_manual(values=c("steelblue", "brown3", "grey70")) +
+  scale_fill_manual(values=c("steelblue", "brown3", "grey70")) +
+  labs(x="ILI", y = "Abundance (CLR)") +
+  theme(strip.text = element_text(face="italic"))
+```
+
+# Common statistical tests  
+At present, Kruskal-Wallis and Wilcox Test are stably available in the `biomeStats` package.  
+
+## Kruskal-Wallis Test  
+When more than two groups are present, we use a non-parametric Kruskal-Wallis test to identify significantly different ASVs. 
+```{r fig.height=4, fig.width=6}
+
+ps.rel <- microbiome::aggregate_taxa(ps, "Genus") %>% 
+  microbiome::transform("compositional")
+ps.rel <- core(ps.rel, detection=0.001, prevalence=50/100)
+
+kw_results <- doKruskalWallisTest(ps.rel,
+                                  sample_group = "ILI",
+                                  adj_method = "BH",
+                                  effect_size = TRUE) %>% 
+  dplyr::filter(p.adj <= 0.05)
+
+print(kw_results)
+
+```
+
+Four genera, _Parabacteroides_, _Fusicatenibacter_, _Ruminococcus 1_ and _Eubacterium_ (Lachnospiraceae) are significantly different.  
+
+Compare thier abundances between groups.  
+```{r fig.height=4, fig.width=8}
+# We use CLR abundances to visualize
+ps.clr <- microbiome::aggregate_taxa(ps, "Genus") %>% 
+  microbiome::transform("clr")
+
+plotTaxaRaincloud(ps.clr,
+                  taxa =kw_results$variable,
+                  group_samples_by = "ILI",
+                  opacity = 0.5,
+                  shape_point = 21) +
+  scale_color_manual(values=c("steelblue", "brown3", "grey70")) +
+  scale_fill_manual(values=c("steelblue", "brown3", "grey70")) +
+  labs(x="ILI", y = "Abundance (CLR)", subtitle = "Significantly different genera") +
+  theme(strip.text = element_text(face="italic"))
+```
+
+## Paired Wilcox Test  
+Within the ILI group, there are participants who had given samples at two visits. We use select these participants. 
+```{r}
+
+two.vis.part <- filterSampleData(ps, ILI != "C") %>% 
+  getSampleTibble() %>% 
+  count(participant_id) %>% 
+  filter(n == 2) %>% 
+  pull(participant_id)
+
+ps <- mutateSampleData(ps, two.visits = ifelse(participant_id %in%two.vis.part, 
+                                               "Yes", "No"))
+
+ps.paired.ili <- filterSampleData(ps, two.visits == "Yes")
+
+ps.paired.ili.rel <- microbiome::aggregate_taxa(ps.paired.ili, "Genus") %>% 
+  microbiome::transform("compositional")
+
+ps.paired.ili.rel <- core(ps.paired.ili.rel, detection=0.001, prevalence=50/100)
+
+wilcox_results <- doWilcoxTest(ps.paired.ili.rel,
+                               sample_group = "ILI",
+                               paired = TRUE,
+                               adj_method = "BH",
+                               alternative = "greater") %>%
+                  dplyr::filter(p.adj <= 0.05)
+
+wilcox_results
+
+```
+
+
+Compare their abundances between groups.  
+_Bacteroides_  
+```{r fig.height=4, fig.width=6}
+# We use CLR abundances to visualize
+ps.paired.ili.clr <- microbiome::aggregate_taxa(ps.paired.ili, "Genus") %>% 
+  microbiome::transform("compositional")
+# raincloud
+bac.ab.plot <- plotTaxaRaincloud(ps.paired.ili.clr,
+                                 taxa = "Bacteroides",
+                                 group_samples_by = "ILI",
+                                 opacity = 0.5,
+                                 shape_point = 21) +
+  scale_color_manual(values=c("brown3", "grey70")) +
+  scale_fill_manual(values=c("brown3", "grey70")) +
+  labs(x="", y = "Relative abundance ", subtitle = "Bacteroides") +
+  theme(strip.text = element_text(face="italic"),
+        plot.subtitle = element_text(face="italic"))
+
+# Prevalence  
+bac.prev.l1 <- microbiome::aggregate_taxa(ps.paired.ili, "Genus") %>% 
+  filterSampleData(ILI=="L1") %>% 
+  getPrevalence(return_taxa = "Bacteroides", return_rank = "Genus") %>% 
+  pull(prevalence)
+  
+bac.prev.l2 <- microbiome::aggregate_taxa(ps.paired.ili, "Genus") %>% 
+  filterSampleData(ILI=="L2") %>% 
+  getPrevalence(return_taxa = "Bacteroides", return_rank = "Genus") %>% 
+  pull(prevalence) 
+
+bac.tib <- tibble(Genus=c("Bacteroides","Bacteroides"),
+              prev = c(bac.prev.l1,bac.prev.l2),
+              group = c("L1", "L2"))
+
+bac.prev.plot <- bac.tib %>% 
+  ggplot(aes(group, prev)) +
+  geom_col(aes(fill=group), width = 0.5,
+           alpha=0.5) +
+  scale_fill_manual(values=c("brown3", "grey70")) +
+  labs(x="", y = "", subtitle = "Prevalence") +
+  scale_y_continuous(position = "right") +
+  theme(legend.position = "none")
+
+
+```
+
+_Parabacteroides_  
+```{r}
+
+parabac.ab.plot <- plotTaxaRaincloud(ps.paired.ili.clr,
+                                 taxa = "Parabacteroides",
+                                 group_samples_by = "ILI",
+                                 opacity = 0.5,
+                                 shape_point = 21) +
+  scale_color_manual(values=c("brown3", "grey70")) +
+  scale_fill_manual(values=c("brown3", "grey70")) +
+  labs(x="", y = "Relative abundance ", subtitle = "Parabacteroides") +
+  theme(strip.text = element_text(face="italic"),
+        plot.subtitle = element_text(face="italic"))
+
+# Prevalence  
+parbac.prev.l1 <- microbiome::aggregate_taxa(ps.paired.ili, "Genus") %>% 
+  filterSampleData(ILI=="L1") %>% 
+  getPrevalence(return_taxa = "Parabacteroides", return_rank = "Genus") %>% 
+  pull(prevalence)
+  
+parbac.prev.l2 <- microbiome::aggregate_taxa(ps.paired.ili, "Genus") %>% 
+  filterSampleData(ILI=="L2") %>% 
+  getPrevalence(return_taxa = "Parabacteroides", return_rank = "Genus") %>% 
+  pull(prevalence) 
+
+parabac.tib <- tibble(Genus=c("Parabacteroides","Parabacteroides"),
+                      prev = c(parbac.prev.l1,parbac.prev.l2),
+                      group = c("L1", "L2"))
+
+parabac.tib.plot <- parabac.tib %>% 
+  ggplot(aes(group, prev)) +
+  geom_col(aes(fill=group), width = 0.5,
+           alpha=0.5) +
+  scale_fill_manual(values=c("brown3", "grey70")) +
+  labs(x="", y = "", subtitle = "Prevalence") +
+  scale_y_continuous(position = "right") +
+  theme(legend.position = "none")
+
+```
+
+
+### Adding p-value  
+To add p-values to the plot, we can use `ggsignif`.  
+```{r}
+
+# get comparisons
+comparsions.list <- as.character(unique(bac.ab.plot$data$ILI))
+
+# bacteroides
+get_pval_bac <- wilcox_results %>% 
+  filter(variable == "Bacteroides") 
+
+bac.ab.plot <- bac.ab.plot +
+  ggsignif::geom_signif(
+    comparisons = list(comparsions.list),
+    y_position = max(bac.ab.plot$data$Abundance)+0.05, tip_length = 0.03, vjust = 0.2,
+    annotation = get_pval_bac$p.adj.signif,
+    color= "grey30",
+    textsize = 3)
+
+# parabacteroides
+get_pval_parabac <- wilcox_results %>% 
+  filter(variable == "Parabacteroides") 
+
+parabac.ab.plot <- parabac.ab.plot +
+  ggsignif::geom_signif(
+    comparisons = list(comparsions.list),
+    y_position = max(parabac.ab.plot$data$Abundance)+0.05, tip_length = 0.03, vjust = 0.2,
+    annotation = get_pval_parabac$p.adj.signif,
+    color= "grey30",
+    textsize = 3)
+
+```
+
+Combine plots.  
+
+```{r fig.height=6, fig.width=4}
+ (bac.ab.plot + bac.prev.plot + plot_layout(widths = c(8,1)))/ (parabac.ab.plot + parabac.tib.plot + plot_layout(widths = c(8,1)))
+```
+
+
+```{r}
+devtools::session_info()
+```
+
