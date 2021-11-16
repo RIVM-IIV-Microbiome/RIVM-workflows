@@ -1,0 +1,176 @@
+---
+title: "Metagenomics workflow using RIVM-Toolbox"
+subtitle: "Humann3 pipeline"
+author: "Sudarshan A. Shetty"
+date: "`r date()`"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---  
+
+In this workflow, we demonstrate the use of Humann3 pipeline setup at RIVM using Singularity for Whole Genome ShotGun metagenomics  microbiome data. This is part of the RIVM-toolbox.  The snakemake workflow from raw reads to taxonomic and functional profiles was developed by Jeroen Frank from Bioinformatics department at RIVM.  
+The source code is located here: https://gitlab.rivm.nl/frankj/humann_pipeline  
+A copy is forked to the RIVM-Microbiome GitLab account here: https://gitlab.rivm.nl/rivm-microbiome/humann_pipeline  
+
+First create a conda environment. This is a virtual environment which allows for convinient installation and management of different softwares. For some introduction check this [blog](https://towardsdatascience.com/virtual-environments-for-absolute-beginners-what-is-it-and-how-to-create-one-examples-a48da8982d4b). More information on conda can be found on this [website](https://docs.conda.io/projects/conda/en/latest/).  
+Conda is installed on individual servers at RIVM. You can login to `Wetenschappelijke werkplek`.  
+
+# Conda  
+## Create Conda Env    
+```{bash eval=F}
+
+# Humann3 pipeline from frankj
+conda create --name humann3_frankj -c bioconda snakemake 
+# activate the environment. 
+
+```
+
+Before the environment is activated your terminal will start like this:    
+`(base) [shettys@rivm-biohn-l05p humann_pipeline-master]$`   
+
+## Activate Conda Env   
+```{bash eval=F}
+
+conda activate humann3_frankj
+
+```
+
+After the :   
+`(humann3_frankj) [shettys@rivm-biohn-l05p humann_pipeline-master]$`   
+
+# Project setup   
+```{bash eval=F}
+# got to your working directory
+cd /data/BioGrid/username/projects
+# make a new directory
+mkdir my_wgs_project
+cd my_wgs_project
+```
+
+
+Now download the raw files in a folder called `my_input_fqs` within the `my_wgs_project` folder. Also download the humann_pipeline from here https://gitlab.rivm.nl/frankj/humann_pipeline and unzip it.  
+
+```{bash eval=F}
+# The folder structure it something like this
+my_wgs_project
+
+    -- my_input_fqs\
+            -- myR1.fastq.gz
+            -- myR2.fastq.gz
+            
+    -- humann_pipeline-master\
+            -- config  # Config file where parameters can be changed
+            -- data  # Not applicable here
+            -- envs # Software environment
+            -- humann.py  # pipeline main function
+            -- log.txt # Logs
+            -- README.md # info
+            -- run_pipeline.sh # internal function
+            -- scripts # internal function
+            -- smk_profiles # internal function
+            -- snakefiles # internal function
+
+```
+
+Go to the `humann_pipeline-master` folder.  
+
+```{bash eval=F}
+cd humann_pipeline-master/
+```
+
+We can now submit our analysis (job) to the HPC with following command. 
+
+# Run Pipeline HPC    
+```{bash eval=F}
+
+bsub -J mytestWGS -q bio -n 1 -o log.txt python humann.py --fq_dir ../my_input_fqs/ --out_dir ../my_input_fqs/mytestWGS_Output
+
+# Note: 
+# HPC LSF specific
+# -J name of the job
+# -q use bio cluster. There is also bio-prio cluster for priority jobs
+# -n 1 use One core 
+# -o output log of cluster job
+
+# Pipeline specific 
+# --fq_dir is the location of fastq.gz files here it is ../my_input_fqs/ that is one folder outside of humann_pipeline-master 
+# --out_dir is the location for storing all outputs from the pipeline
+```
+
+
+More information on HPC at RIVM: https://gitlab.rivm.nl/bioinformatics/docs/wikis/HPC/hosts_and_queues  
+https://gitlab.rivm.nl/bioinformatics/docs  
+
+Software tools used in this pipeline:   
+
+**Introduction**   
+  The HUMAnN 3.0 pipeline performs the following tasks:   
+    - Sequence data quality control reports - [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)   
+    - Read length and quality filtering, adapter trimming - [BBMapBBDuk](https://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/bbduk-guide/)   
+    - Contaminant (human) sequence removal - [KneadData](https://huttenhower.sph.harvard.edu/kneaddata/)   
+    - Estimate microbial composition - [MetaPhlAn 3.0](https://huttenhower.sph.harvard.edu/metaphlan/)    
+    - Estimate microbial metabolic pathway abundance - [HUMAnN](https://huttenhower.sph.harvard.edu/human)   
+
+**Input data**   
+A folder containing paired-end metagenome sequencing data.   
+
+**Output data**
+The main results are stored in the `results/` folder and include:   
+
+  - metaphlan_bugs_list_merged.tsv   
+  - [humann_genefamilies_KO_cpm_join.tsv](https://github.com/biobakery/humann#1-gene-families-file)   
+    converted uniref90 to KO, normalised counts to cpm, joined tables  
+  - [humann_pathabundance_cpm_join.tsv](https://github.com/biobakery/humann#2-pathway-abundance-file)   
+     normalised counts to cpm, joined tables  
+  - [humann_pathcoverage_join.tsv](https://github.com/biobakery/humann#3-pathway-coverage-file)     
+    Joined tables
+  
+Intermediate and temporary data are automatically removed.   
+
+The output folder will have following folder
+```{bash eval=F}
+my_wgs_project
+
+    -- my_input_fqs\
+            -- myR1.fastq.gz
+            -- myR2.fastq.gz
+            -- mytestWGS_Output
+                      -- fastqc 
+                            -- pre_qc
+                            -- post-qc
+                      -- fq_input  
+                            -- pseudo links to my_input_fqs
+                      -- humann  
+                            -- per sample humann output
+                      --  kneaddata  
+                      -- logs 
+                      -- results
+                            -- humann_genefamilies_KO_cpm_join.tsv  
+                            -- humann_pathabundance_cpm_join.tsv  
+                            -- humann_pathcoverage_join.tsv
+                            -- humann_genefamilies_KO_join.tsv 
+                            -- humann_pathabundance_join.tsv
+                            -- metaphlan_bugs_list_merged.tsv
+            
+```
+
+The `metaphlan_bugs_list_merged.tsv` file can be read into R using the `biomeUtils::readMergedMetaphlan()` function.  
+
+# Hand-off to RIVM-toolbox    
+```{r eval=FALSE}
+path_to_file = "my_wgs_project/my_input_fqs/mytestWGS_Output/results/metaphlan_bugs_list_merged.tsv"
+mpa.ps.lab8 <- readMergedMetaphlan(input_file_path = path_to_file,
+                              find_sample_name_pattern = "_kneaddata_concat_metaphlan_bugs_list",
+                              replace_sample_name_pattern = "")
+```
+
+
+**For more information contact:**     
+Sudarshan A. Shetty: sudarshan.shetty[@]rivm[dot]nl   
+Susana Fuentes: susana.fuentes[@]rivm[dot]nl   
+
+

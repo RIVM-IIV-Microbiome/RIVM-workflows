@@ -7,3 +7,5 @@ navbar:
       href: index.html
     - text: "Case Study"
       href: 01_RIVM-ToolBoxCaseStudy.html
+    - text: "WGS Metagenomics Humann3"
+      href: 02_Metagenomics_Humann3.html
